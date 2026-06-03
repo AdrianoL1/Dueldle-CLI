@@ -18,14 +18,14 @@ async def get_champions_slugs() -> list[str]:
         async with session.get(DATA_URL) as res:
             data: dict = await res.json()
 
-    slugs = [f"{champion_data['name'].replace("'", '%27')}"
+    slugs = [f"{champion_data['name'].replace("'", '%27').split("&")[0]}"
              for champion_data in data["data"].values()]
 
     print(f"Total: {len(slugs)} champions")
     return slugs
 
 async def get_champions_pages(slugs: list[str]) -> list[str]:
-    semaphore = asyncio.Semaphore(10)
+    semaphore = asyncio.Semaphore(3)
 
     async def fetch_champion(slug: str):
         async with semaphore:
@@ -33,7 +33,7 @@ async def get_champions_pages(slugs: list[str]) -> list[str]:
                 fetch_page(session, f"{WIKI_URL}/{slug}"),
                 fetch_page(session, f"{WIKI_URL}/Universe:{slug}")
             )
-
+            await asyncio.sleep(1)
             return {
                 slug: {
                     "wiki": wiki_html,
